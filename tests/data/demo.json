@@ -1,0 +1,27 @@
+{
+    "title": "Demo Login",
+    "steps": [
+        {
+            "stepName": "Open SauceDemo",
+            "action": "goto",
+            "value": "https://www.saucedemo.com/"
+        },
+        {
+            "stepName": "Type User",
+            "action": "fill",
+            "locator": "[data-test='username']",
+            "value": "standard_user"
+        },
+        {
+            "stepName": "Type Pass",
+            "action": "fill",
+            "locator": "[data-test='password']",
+            "value": "secret_sauce"
+        },
+        {
+            "stepName": "Click Login",
+            "action": "click",
+            "locator": "[data-test='login-button']"
+        }
+    ]
+}
