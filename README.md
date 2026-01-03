@@ -1,114 +1,123 @@
-# Test JSON Runner
+# QA Hybrid Framework (Next.js + Playwright)
 
-An intelligent **Keyword-Driven Testing Framework** that allows **Manual Testers** to execute robust automation scripts using **simple JSON files**, without writing a single line of code.
+## Description
+
+This project is a modern **Keyword-Driven Testing Framework** that combines a **Next.js User Interface** with a **Playwright Automation Engine**. It allows **Manual Testers** to generate, manage, and execute automation scripts via a **web browser without writing code**, while providing robust validation and reporting for **SDETs**.
 
 ---
 
 ## Key Features
 
-- **Zero-Code Execution**
-  Define tests in JSON, run with Playwright engine.
+1. **No-Code Interface**
+   Web-based form to create test steps (Click, Fill, Navigate).
 
-- **Dynamic Discovery**
-  Automatically finds and executes all `.json` test cases in the `data` folder.
+2. **Hybrid Architecture**
+   Monorepo combining React Frontend and Playwright Backend.
 
-- **Strict Validation**
-  Integrated with **Zod** to catch typo or invalid data schema before execution.
+3. **Strict Validation**
+   Zod schemas ensure all test data is valid before execution.
 
-- **Rich Reporting**
-  Integrated with **Allure Report** for visualization and debugging.
+4. **Professional Reporting**
+   Integrated Allure Report for visual test results.
 
-- **Smart Waits**
-  Built-in mechanism to handle dynamic loading elements.
+5. **Hot-Reloading**
+   Changes in UI are immediately reflected in the test engine.
 
 ---
 
 ## Tech Stack
 
-- **Core:** TypeScript & Node.js
-- **Automation:** Playwright
+- **Frontend:** Next.js 14 (App Router), React, Tailwind CSS, Lucide Icons
+- **Automation:** Playwright, TypeScript
 - **Validation:** Zod
-- **Reporting:** Allure
+- **Utilities:** Node.js File System
 
 ---
 
-## How to Run
+## Prerequisites
 
-### 1. Install Dependencies
+- Node.js (Version 18 or higher)
+- Java (Optional, required only for Allure Report generation)
 
-Ensure you have Node.js installed, then run:
+---
+
+## Installation Guide
+
+1. Clone the repository or download the source code.
+2. Open terminal in the project root folder.
+3. Run the following command to install dependencies:
 
 ```bash
 npm install
 ```
 
----
-
-### 2. Create Test Scenario
-
-Create a new file in `tests/data/`, for example `tests/data/login.json`:
-
-```json
-{
-  "title": "Login Scenario",
-  "steps": [
-    {
-      "stepName": "Open Website",
-      "action": "goto",
-      "value": "https://www.saucedemo.com/"
-    },
-    {
-      "stepName": "Fill Username",
-      "action": "fill",
-      "locator": "[data-test='username']",
-      "value": "standard_user"
-    },
-    {
-      "stepName": "Click Login",
-      "action": "click",
-      "locator": "[data-test='login-button']"
-    }
-  ]
-}
-```
-
----
-
-### 3. Execute Test
-
-Run all test cases found in the `data` folder:
+4. Install Playwright browsers:
 
 ```bash
-npx playwright test
+npx playwright install
 ```
 
 ---
 
-### 4. View Report
+## How to Use (For Manual Testers)
 
-To generate and open the Allure dashboard:
+1. Start the Web Interface:
 
 ```bash
-npx allure serve allure-results
+npm run dev
+```
+
+2. Open your browser at:
+   `http://localhost:3000`
+
+3. Use the form to add test steps (e.g., Go to URL, Click Button).
+
+4. Check the generated JSON preview.
+
+---
+
+## How to Use (For SDET / CLI)
+
+1. Run automation tests in headless mode:
+
+```bash
+npm run test
+```
+
+2. Run automation tests with browser visible:
+
+```bash
+npx playwright test --headed
+```
+
+3. Generate and view test report:
+
+```bash
+npm run report
 ```
 
 ---
 
-## Supported Actions
+## Project Structure
 
-Currently, the engine supports the following actions in JSON:
+- `src/app`
+  Next.js Frontend logic (UI)
 
-- **goto**
-  Navigate to a URL.
+- `src/engine`
+  Automation Logic (Action Mappers, Schemas, Types)
 
-- **click**
-  Click an element (requires locator).
+- `tests/data`
+  Storage for JSON test case files
 
-- **fill**
-  Type text into an input (requires locator & value).
+- `tests/main.spec.ts`
+  The main runner script that reads JSON and triggers Playwright
 
-- **assertText**
-  Verify text content (requires locator & value).
+---
 
-- **wait**
-  Pause execution (requires value in ms or locator to appear).
+## Troubleshooting
+
+- **Issue:** "Allure command not found"
+  **Solution:** Ensure you run `npm run report` instead of just `allure`.
+
+- **Issue:** "Validation Error"
+  **Solution:** Check if your JSON file has missing required fields (e.g., Click action without a Locator).
