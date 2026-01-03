@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Next.js & Node
+node_modules/
+.next/
+out/
+build/
+dist/
+.env
+.env*.local
+.DS_Store
+npm-debug.log*
+
+# Playwright & Reports
+/test-results/
+/playwright-report/
+/allure-results/
+/allure-report/
+/blob-report/
