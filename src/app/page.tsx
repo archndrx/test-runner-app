@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { Plus, Trash2, Play, Save } from "lucide-react";
 
-// Tipe data sesuai Engine kita
+// Data types according to our Engine
 type ActionType = "goto" | "click" | "fill" | "assertText" | "wait";
 
 interface TestStep {
-  id: number; 
+  id: number;
   stepName: string;
   action: ActionType;
   locator: string;
@@ -18,6 +18,31 @@ export default function Home() {
   const [testTitle, setTestTitle] = useState("New Test Scenario");
   const [steps, setSteps] = useState<TestStep[]>([]);
 
+  const handleSave = async () => {
+    try {
+      const payload = {
+        title: testTitle,
+        steps: steps,
+      };
+
+      const response = await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("✅ Successfully Saved! Check tests/data folder");
+      } else {
+        alert("❌ Failed: " + result.error);
+      }
+    } catch (error) {
+      alert("❌ Connection Error");
+    }
+  };
+
   // Fungsi tambah step baru
   const addStep = () => {
     setSteps([
@@ -26,12 +51,12 @@ export default function Home() {
     ]);
   };
 
-  // Fungsi hapus step
+  // Function to delete step
   const removeStep = (id: number) => {
     setSteps(steps.filter((step) => step.id !== id));
   };
 
-  // Fungsi update data step
+  // Function to update step data
   const updateStep = (id: number, field: keyof TestStep, newValue: string) => {
     setSteps(
       steps.map((step) =>
@@ -54,7 +79,10 @@ export default function Home() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
               <Save size={18} /> Save JSON
             </button>
             <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
