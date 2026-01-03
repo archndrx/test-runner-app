@@ -11,6 +11,7 @@ interface TestStep {
   stepName: string;
   action: ActionType;
   locator: string;
+  altLocator?: string;
   value: string;
 }
 
@@ -19,6 +20,7 @@ export default function Home() {
   const [steps, setSteps] = useState<TestStep[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [testLogs, setTestLogs] = useState<string>("");
+
   const stripAnsi = (text: string) => {
     return text.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
   };
@@ -53,7 +55,7 @@ export default function Home() {
     setTestLogs("Initializing...\n1. Saving latest changes...\n");
 
     try {
-      // STEP 1: AUTO-SAVE (Save the current UI state to disk first)
+      // 1. AUTO-SAVE
       const savePayload = {
         title: testTitle,
         steps: steps,
@@ -74,11 +76,11 @@ export default function Home() {
         (prev) => prev + "2. Changes saved. Starting Playwright...\n"
       );
 
-      // STEP 2: EXECUTE (Trigger run for this specific title)
+      // 2. EXECUTE
       const runResponse = await fetch("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: testTitle }), // Send title to filter tests
+        body: JSON.stringify({ title: testTitle }),
       });
 
       const runResult = await runResponse.json();
@@ -103,7 +105,14 @@ export default function Home() {
   const addStep = () => {
     setSteps([
       ...steps,
-      { id: Date.now(), stepName: "", action: "click", locator: "", value: "" },
+      {
+        id: Date.now(),
+        stepName: "",
+        action: "click",
+        locator: "",
+        altLocator: "",
+        value: "",
+      },
     ]);
   };
 
@@ -175,88 +184,165 @@ export default function Home() {
         </div>
 
         {/* STEPS LIST */}
-        <div className="space-y-4 mb-8">
+        <div className="space-y-6 mb-8">
           {steps.map((step, index) => (
             <div
               key={step.id}
-              className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex gap-4 items-start animate-in fade-in slide-in-from-bottom-2"
+              className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-bottom-2"
             >
-              <div className="bg-slate-100 w-8 h-8 flex items-center justify-center rounded-full font-bold text-slate-500 mt-1">
-                {index + 1}
+              <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 text-blue-700 w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm">
+                    {index + 1}
+                  </div>
+                  <h3 className="font-semibold text-slate-700 text-sm">
+                    Step {index + 1}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => removeStep(step.id)}
+                  className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                  title="Remove Step"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
 
-              <div className="grid grid-cols-12 gap-3 flex-1">
-                {/* Step Name */}
-                <div className="col-span-3">
-                  <input
-                    placeholder="Step Name (e.g. Open Login)"
-                    className="w-full border rounded p-2 text-sm"
-                    value={step.stepName}
-                    onChange={(e) =>
-                      updateStep(step.id, "stepName", e.target.value)
-                    }
-                  />
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                {/* 1. Step Name & Action */}
+                <div className="lg:col-span-3 space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">
+                      Step Name
+                    </label>
+                    <input
+                      placeholder="e.g. Login Process"
+                      className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition"
+                      value={step.stepName}
+                      onChange={(e) =>
+                        updateStep(step.id, "stepName", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">
+                      Action
+                    </label>
+                    <select
+                      className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition"
+                      value={step.action}
+                      onChange={(e) =>
+                        updateStep(
+                          step.id,
+                          "action",
+                          e.target.value as ActionType
+                        )
+                      }
+                    >
+                      <option value="goto">Go To URL</option>
+                      <option value="click">Click Element</option>
+                      <option value="fill">Fill Input</option>
+                      <option value="assertText">Assert Text</option>
+                      <option value="wait">Wait</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* Action Dropdown */}
-                <div className="col-span-2">
-                  <select
-                    className="w-full border rounded p-2 text-sm bg-white"
-                    value={step.action}
-                    onChange={(e) =>
-                      updateStep(
-                        step.id,
-                        "action",
-                        e.target.value as ActionType
-                      )
-                    }
-                  >
-                    <option value="goto">Go To URL</option>
-                    <option value="click">Click</option>
-                    <option value="fill">Fill Input</option>
-                    <option value="assertText">Assert Text</option>
-                    <option value="wait">Wait</option>
-                  </select>
+                {/* 2. LOCATOR AREA (Professional Style) */}
+                <div className="lg:col-span-6 flex flex-col">
+                  <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">
+                    Target Locator
+                  </label>
+
+                  {/* MAIN LOCATOR */}
+                  <div className="relative z-10">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span
+                        className={`text-xs font-bold ${
+                          step.action === "goto"
+                            ? "text-slate-300"
+                            : "text-blue-500"
+                        }`}
+                      >
+                        A
+                      </span>
+                    </div>
+                    <input
+                      placeholder={
+                        step.action === "goto"
+                          ? "Not Required"
+                          : "Primary Selector (e.g. #submit-btn)"
+                      }
+                      className={`w-full border rounded-lg py-2 pl-8 pr-3 text-sm font-mono transition shadow-sm
+                        ${
+                          step.action === "goto" || step.action === "wait"
+                            ? "bg-slate-50 text-slate-400 border-slate-200"
+                            : "border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        }`}
+                      disabled={
+                        step.action === "goto" || step.action === "wait"
+                      }
+                      value={step.locator}
+                      onChange={(e) =>
+                        updateStep(step.id, "locator", e.target.value)
+                      }
+                    />
+                  </div>
+
+                  {/* BACKUP LOCATOR (Branching Style) */}
+                  {step.action !== "goto" && step.action !== "wait" && (
+                    <div className="flex items-center mt-[-4px]">
+                      <div className="w-6 h-10 border-l-2 border-b-2 border-slate-200 rounded-bl-xl ml-4 mr-2 translate-y-[-50%] z-0"></div>
+
+                      <div className="relative flex-1 mt-2">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-slate-400"
+                          >
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                          </svg>
+                        </div>
+                        <input
+                          placeholder="Backup Selector (e.g text='Submit')"
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-lg py-1.5 pl-9 pr-3 text-xs font-mono focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition placeholder:text-slate-400"
+                          value={step.altLocator || ""}
+                          onChange={(e) =>
+                            updateStep(step.id, "altLocator", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Locator */}
-                <div className="col-span-3">
-                  <input
+                {/* 3. Value Area */}
+                <div className="lg:col-span-3">
+                  <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">
+                    Input Value
+                  </label>
+                  <textarea
+                    rows={4}
                     placeholder={
-                      step.action === "goto"
-                        ? "Disabled"
-                        : "Locator (e.g. #btn-login)"
+                      step.action === "click"
+                        ? "Not Required"
+                        : "Value to type / URL"
                     }
-                    className="w-full border rounded p-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-                    disabled={step.action === "goto" || step.action === "wait"}
-                    value={step.locator}
-                    onChange={(e) =>
-                      updateStep(step.id, "locator", e.target.value)
-                    }
-                  />
-                </div>
-
-                {/* Value */}
-                <div className="col-span-3">
-                  <input
-                    placeholder="Value (e.g. user123)"
-                    className="w-full border rounded p-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-sm disabled:bg-slate-50 disabled:text-slate-400 resize-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
                     disabled={step.action === "click"}
                     value={step.value}
                     onChange={(e) =>
                       updateStep(step.id, "value", e.target.value)
                     }
                   />
-                </div>
-
-                {/* Delete Button */}
-                <div className="col-span-1 flex justify-center">
-                  <button
-                    onClick={() => removeStep(step.id)}
-                    className="text-red-400 hover:text-red-600 p-2"
-                  >
-                    <Trash2 size={18} />
-                  </button>
                 </div>
               </div>
             </div>
@@ -271,7 +357,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* JSON PREVIEW (DEBUGGING) */}
+        {/* JSON PREVIEW */}
         <div className="bg-slate-900 text-slate-300 p-6 rounded-xl font-mono text-sm overflow-x-auto">
           <h3 className="text-slate-500 mb-2 uppercase text-xs tracking-wider">
             Live JSON Preview
@@ -290,7 +376,6 @@ export default function Home() {
             )}
           </h3>
           <pre className="whitespace-pre-wrap font-mono text-sm">
-            {/* Apply the stripAnsi function to clean up the output */}
             {stripAnsi(testLogs) || "Ready to run tests..."}
           </pre>
         </div>
