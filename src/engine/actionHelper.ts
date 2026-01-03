@@ -1,13 +1,31 @@
 import { Page, expect, test } from "@playwright/test";
 import { TestStep } from "./types";
 
-function fixLocator(locator: string): string {
+function fixLocator(locator: string, actionType: string = 'click'): string {
   if (!locator) return locator;
-  const isAttributePattern = /^[a-zA-Z-]+=['"].*['"]$/.test(locator);
 
-  if (isAttributePattern && !locator.startsWith("[")) {
-    console.log(`[SMART-LOCATOR] Auto-wrapping attribute: [${locator}]`);
-    return `[${locator}]`;
+  const simpleAttributeMatch = locator.match(/^([a-zA-Z-]+)=(.*)$/);
+  const isReservedKeyword = simpleAttributeMatch && ['text', 'xpath', 'css', 'has-text'].includes(simpleAttributeMatch[1]);
+
+  if (simpleAttributeMatch && !locator.startsWith('[') && !isReservedKeyword) {
+    const key = simpleAttributeMatch[1];
+    const value = simpleAttributeMatch[2];
+    const hasQuotes = value.startsWith("'") || value.startsWith('"');
+    const finalValue = hasQuotes ? value : `'${value}'`;
+    console.log(`[SMART-LOCATOR] ⚡ Attribute Shorthand detected. Converting to [${key}=${finalValue}]`);
+    return `[${key}=${finalValue}]`;
+  }
+
+  const isPlainText = /^[a-zA-Z0-9\s\-_:']+$/.test(locator);
+
+  if (isPlainText) {
+    console.log(`[SMART-LOCATOR] 🔮 Plain Text detected. Context: ${actionType}`);
+
+    if (actionType === 'fill') {
+       return `[placeholder*='${locator}'], [aria-label*='${locator}'], [name='${locator}']`;
+    }
+
+    return `text='${locator}', [placeholder*='${locator}'], [aria-label*='${locator}'], [alt*='${locator}']`;
   }
 
   return locator;
@@ -18,9 +36,9 @@ export async function executeStep(page: Page, step: TestStep) {
     const rawLocator = step.locator || "";
     const rawAltLocator = step.altLocator || undefined;
 
-    const finalLocator = fixLocator(rawLocator);
+    const finalLocator = fixLocator(rawLocator, step.action);
     const finalAltLocator = rawAltLocator
-      ? fixLocator(rawAltLocator)
+      ? fixLocator(rawAltLocator, step.action)
       : undefined;
 
     console.log(`[EXEC] ${step.stepName}`);
