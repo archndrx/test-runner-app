@@ -5,7 +5,17 @@ export async function executeStep(page: Page, step: TestStep) {
   await test.step(`${step.stepName} [${step.action}]`, async () => {
     console.log(`[EXEC] ${step.stepName}`);
     switch (step.action) {
-      case 'goto': if(step.value) await page.goto(step.value); break;
+      case 'goto':
+        if (step.value) {
+          let targetUrl = step.value;
+          if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            console.log(`[AUTO-FIX] Adding https protocol to ${targetUrl}`);
+            targetUrl = 'https://' + targetUrl;
+          }
+          
+          await page.goto(targetUrl);
+        }
+        break;
       case 'fill': 
         if(step.locator && step.value) {
           await page.locator(step.locator).waitFor({state: 'visible'});
