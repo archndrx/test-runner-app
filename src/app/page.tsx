@@ -20,6 +20,7 @@ export default function Home() {
   const [steps, setSteps] = useState<TestStep[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [testLogs, setTestLogs] = useState<string>("");
+  const [isHeadless, setIsHeadless] = useState(false);
 
   const stripAnsi = (text: string) => {
     return text.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
@@ -80,7 +81,10 @@ export default function Home() {
       const runResponse = await fetch("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: testTitle }),
+        body: JSON.stringify({
+          title: testTitle,
+          isHeadless: isHeadless,
+        }),
       });
 
       const runResult = await runResponse.json();
@@ -143,27 +147,41 @@ export default function Home() {
               Create automation scripts without coding
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-4">
+            {/* HEADLESS TOGGLE */}
+            <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 transition">
+              <input
+                type="checkbox"
+                checked={isHeadless}
+                onChange={(e) => setIsHeadless(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-slate-600">
+                Ghost Mode (Headless)
+              </span>
+            </label>
+
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              className="flex items-center gap-2 bg-white text-slate-700 border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 transition font-medium shadow-sm"
             >
-              <Save size={18} /> Save JSON
+              <Save size={18} /> Save
             </button>
+
             <button
               onClick={handleRun}
               disabled={isRunning}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition font-medium shadow-md ${
                 isRunning
                   ? "bg-slate-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
+                  : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
               {isRunning ? (
                 <span>Running...</span>
               ) : (
                 <>
-                  <Play size={18} /> Run Test
+                  <Play size={18} fill="currentColor" /> Run Test
                 </>
               )}
             </button>
