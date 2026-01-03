@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Test JSON Runner
 
-## Getting Started
+An intelligent **Keyword-Driven Testing Framework** that allows **Manual Testers** to execute robust automation scripts using **simple JSON files**, without writing a single line of code.
 
-First, run the development server:
+---
+
+## Key Features
+
+- **Zero-Code Execution**
+  Define tests in JSON, run with Playwright engine.
+
+- **Dynamic Discovery**
+  Automatically finds and executes all `.json` test cases in the `data` folder.
+
+- **Strict Validation**
+  Integrated with **Zod** to catch typo or invalid data schema before execution.
+
+- **Rich Reporting**
+  Integrated with **Allure Report** for visualization and debugging.
+
+- **Smart Waits**
+  Built-in mechanism to handle dynamic loading elements.
+
+---
+
+## Tech Stack
+
+- **Core:** TypeScript & Node.js
+- **Automation:** Playwright
+- **Validation:** Zod
+- **Reporting:** Allure
+
+---
+
+## How to Run
+
+### 1. Install Dependencies
+
+Ensure you have Node.js installed, then run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Create Test Scenario
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a new file in `tests/data/`, for example `tests/data/login.json`:
 
-## Learn More
+```json
+{
+  "title": "Login Scenario",
+  "steps": [
+    {
+      "stepName": "Open Website",
+      "action": "goto",
+      "value": "https://www.saucedemo.com/"
+    },
+    {
+      "stepName": "Fill Username",
+      "action": "fill",
+      "locator": "[data-test='username']",
+      "value": "standard_user"
+    },
+    {
+      "stepName": "Click Login",
+      "action": "click",
+      "locator": "[data-test='login-button']"
+    }
+  ]
+}
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Execute Test
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Run all test cases found in the `data` folder:
 
-## Deploy on Vercel
+```bash
+npx playwright test
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. View Report
+
+To generate and open the Allure dashboard:
+
+```bash
+npx allure serve allure-results
+```
+
+---
+
+## Supported Actions
+
+Currently, the engine supports the following actions in JSON:
+
+- **goto**
+  Navigate to a URL.
+
+- **click**
+  Click an element (requires locator).
+
+- **fill**
+  Type text into an input (requires locator & value).
+
+- **assertText**
+  Verify text content (requires locator & value).
+
+- **wait**
+  Pause execution (requires value in ms or locator to appear).
