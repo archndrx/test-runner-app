@@ -17,6 +17,11 @@ interface TestStep {
 export default function Home() {
   const [testTitle, setTestTitle] = useState("New Test Scenario");
   const [steps, setSteps] = useState<TestStep[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [testLogs, setTestLogs] = useState<string>("");
+  const stripAnsi = (text: string) => {
+    return text.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
+  };
 
   const handleSave = async () => {
     try {
@@ -43,7 +48,58 @@ export default function Home() {
     }
   };
 
-  // Fungsi tambah step baru
+  const handleRun = async () => {
+    setIsRunning(true);
+    setTestLogs("Initializing...\n1. Saving latest changes...\n");
+
+    try {
+      // STEP 1: AUTO-SAVE (Save the current UI state to disk first)
+      const savePayload = {
+        title: testTitle,
+        steps: steps,
+      };
+
+      const saveResponse = await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(savePayload),
+      });
+
+      const saveResult = await saveResponse.json();
+      if (!saveResult.success) {
+        throw new Error("Auto-save failed: " + saveResult.error);
+      }
+
+      setTestLogs(
+        (prev) => prev + "2. Changes saved. Starting Playwright...\n"
+      );
+
+      // STEP 2: EXECUTE (Trigger run for this specific title)
+      const runResponse = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: testTitle }), // Send title to filter tests
+      });
+
+      const runResult = await runResponse.json();
+
+      if (runResult.success) {
+        setTestLogs(
+          (prev) => prev + "\n--- TEST EXECUTION LOGS ---\n" + runResult.logs
+        );
+      } else {
+        setTestLogs((prev) => prev + `\nExecution Error: ${runResult.error}`);
+      }
+    } catch (error: any) {
+      setTestLogs(
+        (prev) => prev + `\nCritical Error: ${error.message || "Unknown error"}`
+      );
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  // Function to add a new step
   const addStep = () => {
     setSteps([
       ...steps,
@@ -85,8 +141,22 @@ export default function Home() {
             >
               <Save size={18} /> Save JSON
             </button>
-            <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
-              <Play size={18} /> Run Test
+            <button
+              onClick={handleRun}
+              disabled={isRunning}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition ${
+                isRunning
+                  ? "bg-slate-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {isRunning ? (
+                <span>Running...</span>
+              ) : (
+                <>
+                  <Play size={18} /> Run Test
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -207,6 +277,22 @@ export default function Home() {
             Live JSON Preview
           </h3>
           <pre>{JSON.stringify({ title: testTitle, steps }, null, 2)}</pre>
+        </div>
+
+        {/* EXECUTION LOGS AREA */}
+        <div className="mt-8 bg-black text-green-400 p-6 rounded-xl font-mono text-sm overflow-x-auto border border-slate-700 shadow-2xl">
+          <h3 className="text-slate-500 mb-2 uppercase text-xs tracking-wider flex justify-between">
+            <span>Terminal Output</span>
+            {isRunning && (
+              <span className="text-yellow-400 animate-pulse">
+                ● Executing...
+              </span>
+            )}
+          </h3>
+          <pre className="whitespace-pre-wrap font-mono text-sm">
+            {/* Apply the stripAnsi function to clean up the output */}
+            {stripAnsi(testLogs) || "Ready to run tests..."}
+          </pre>
         </div>
       </div>
     </main>
