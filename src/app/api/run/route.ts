@@ -1,32 +1,26 @@
-import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
+import { NextResponse } from "next/server";
+import { exec } from "child_process";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    // Receive the specific test title to run
     const body = await request.json();
-    const testTitle = body.title || '';
+    const testTitle = body.title || "";
 
-    /**
-     * COMMAND EXPLANATION:
-     * - 'npx playwright test' : The base command.
-     * - '--headed' : Shows the browser UI.
-     * - '-g "Title"' : The "grep" flag. It tells Playwright to ONLY run tests 
-     * that contain this specific title string.
-     */
-    const command = testTitle 
-      ? `npx playwright test --headed -g "${testTitle}"`
-      : `npx playwright test --headed`; // Fallback to run all if no title provided
+    const isHeadless = body.isHeadless === true;
 
-    console.log(`Executing command: ${command}`);
+    const modeFlag = isHeadless ? "" : "--headed";
+
+    const grepFlag = testTitle ? `-g "${testTitle}"` : "";
+    const command = `npx playwright test ${modeFlag} ${grepFlag}`;
+
+    console.log(`Executing: ${command}`);
 
     const output = await new Promise<string>((resolve, reject) => {
       exec(command, (error, stdout, stderr) => {
         if (error) {
-          // Resolve with logs even on error, so user sees what happened
-          resolve(stdout + '\n' + stderr);
+          resolve(stdout + "\n" + stderr);
           return;
         }
         resolve(stdout);
@@ -34,12 +28,14 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, logs: output });
-
   } catch (err) {
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to execute test runner.',
-      details: String(err)
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to execute test runner.",
+        details: String(err),
+      },
+      { status: 500 }
+    );
   }
 }
