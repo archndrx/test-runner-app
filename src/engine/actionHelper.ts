@@ -19,13 +19,24 @@ function fixLocator(locator: string, actionType: string = 'click'): string {
   const isPlainText = /^[a-zA-Z0-9\s\-_:']+$/.test(locator);
 
   if (isPlainText) {
-    console.log(`[SMART-LOCATOR] 🔮 Plain Text detected. Context: ${actionType}`);
+    console.log(`[SMART-LOCATOR] 🔮 Omni-Search activated for: '${locator}'`);
+    
+    const parts = [
+      `button:has-text("${locator}")`,
+      
+      `a:has-text("${locator}")`,
+      
+      `input[type='submit'][value*='${locator}']`,
+      `input[type='button'][value*='${locator}']`,
+      
+      `:text("${locator}")`, 
+      `[placeholder*='${locator}']`,
+      `[aria-label*='${locator}']`,
+      `[title*='${locator}']`,
+      `img[alt*='${locator}']`
+    ];
 
-    if (actionType === 'fill') {
-       return `[placeholder*='${locator}'], [aria-label*='${locator}'], [name='${locator}']`;
-    }
-
-    return `text='${locator}', [placeholder*='${locator}'], [aria-label*='${locator}'], [alt*='${locator}']`;
+    return parts.join(', ');
   }
 
   return locator;
@@ -86,7 +97,7 @@ export async function executeStep(page: Page, step: TestStep) {
             async (loc) => {
               await page
                 .locator(loc)
-                .waitFor({ state: "visible", timeout: 2000 });
+                .waitFor({ state: "visible", timeout: 5000 });
               await page.fill(loc, step.value!);
             }
           );
@@ -99,7 +110,7 @@ export async function executeStep(page: Page, step: TestStep) {
             finalLocator,
             finalAltLocator,
             async (loc) => {
-              await page.locator(loc).click({ timeout: 2000 });
+              await page.locator(loc).click({ timeout: 5000 });
             }
           );
         }
